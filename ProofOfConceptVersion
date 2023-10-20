@@ -1,0 +1,168 @@
+public class AutoLoanApp {
+
+    //root pointer
+    private memberNode rootID;
+    
+    //memberNode method definition
+    private class memberNode {
+        private int memberID; //member ID number
+        private double monthlyIncome;
+        private int creditScore;
+        
+        private memberNode firstChild;
+        private memberNode nextSibling;
+        
+        //memberNode method initializer
+        public memberNode(int rootID_in, double income_in, int cscore_in) {
+            this.memberID = rootID_in;
+            this.monthlyIncome = income_in;
+            this.creditScore = cscore_in;
+            
+        }
+    }
+    
+    //method to add new bank members aka insert new node
+    public void newMember(int new_ID_in, double new_income_in, int new_cscore_in) {
+        rootID = newMemberRecursive(rootID, new_ID_in, new_income_in, new_cscore_in);
+    }
+    
+    //newMemberRecursive method definition
+    public memberNode newMemberRecursive(memberNode rootID_val, int new_ID_val, double new_income_val, int new_cscore_val) {
+        if(rootID_val == null) {
+            rootID_val = new memberNode(new_ID_val, new_income_val, new_cscore_val);
+            return rootID_val;
+        }
+        if(new_ID_val < rootID_val.memberID) {
+            rootID_val.firstChild = newMemberRecursive(rootID_val.firstChild, new_ID_val, new_income_val, new_cscore_val);
+        } else {
+            rootID_val.nextSibling = newMemberRecursive(rootID_val.nextSibling, new_ID_val, new_income_val, new_cscore_val);
+        }
+        return rootID_val;
+    }
+    
+    //method to search for a node by member ID
+    public memberNode search(int search_key) {
+        return searchRecursive(rootID, search_key);
+    }
+    
+    //searchRecursive method definition
+    public memberNode searchRecursive(memberNode rootID_key, int search_key_val) {
+        if(rootID_key == null || rootID_key.memberID == search_key_val) {
+            if(rootID_key == null) {
+                System.out.println("Member not found");
+                return rootID_key;
+            } else if(rootID_key.memberID == search_key_val) {
+                //System.out.println("Key found");
+                return rootID_key;
+            }
+        }
+        if(search_key_val < rootID_key.memberID) {
+            return searchRecursive(rootID_key.firstChild, search_key_val);
+        } else {
+            return searchRecursive(rootID_key.nextSibling, search_key_val);
+        }
+    }
+    
+    //method to print member information
+    public void printMemberProfile(int member_id) {
+        System.out.println("Running printMemberProfile method ");
+        memberNode profile = search(member_id);
+        System.out.println("User ID: " + profile.memberID);
+        System.out.println("Monthly Income: $" + profile.monthlyIncome);
+        System.out.println("Credit Score: " + profile.creditScore + "\n");
+    }
+    
+    //method to list members in order by ID number
+    public void listInOrder() {
+        listInOrderRecursive(rootID);
+    }
+    
+    //listInOrderRecursive method definition
+    public void listInOrderRecursive(memberNode rootID_key) {
+        if(rootID_key == null) {
+            return;
+        }
+        listInOrderRecursive(rootID_key.firstChild);
+        System.out.println("Member ID number: " + rootID_key.memberID + " ");
+        System.out.println("Gross Monthly Income: " + rootID_key.monthlyIncome + " ");
+        System.out.println("Credit score: " + rootID_key.creditScore + " \n");
+        listInOrderRecursive(rootID_key.nextSibling);
+    }
+    
+   //calcDTI method (userID, debt)
+    public double calcDTI(int member_id, double debt) {
+        memberNode memberKey = search(member_id);
+        double dtiVal = (debt / memberKey.monthlyIncome);
+        System.out.println("DTI is " + dtiVal*100 + "%");
+        return dtiVal;
+    }
+    
+    //getAPR method (userID)
+    public double getAPR(int member_id) {
+        memberNode memberKey = search(member_id);
+        double interestRate = 0;
+        int cScore = memberKey.creditScore;
+        
+        if ((cScore >= 300) && (cScore <= 499)) {
+            interestRate = 0.18; //percent
+        } else if ((cScore >= 500) && (cScore <= 679)) {
+            interestRate = 0.12; //percent
+        } else if ((cScore >= 680) && (cScore <= 779)) {
+            interestRate = 0.07; //percent
+        } else if ((cScore >= 780) && (cScore <= 850)) {
+            interestRate = 0.02; //percent
+        }
+        System.out.println("APR percentage is: " + interestRate*100 + "%.");
+        return interestRate;
+    }
+    
+    //getMaxMonthlyPayment method (userID, debt)
+    public double getMaxMonthlyPayment(int member_id, double debt) {
+        memberNode memberKey = search(member_id);
+        double dtiVal = calcDTI(member_id, debt);
+        double maxLoanPercentage = 0.43 - dtiVal;
+        double maxMonthlyPayment = maxLoanPercentage * memberKey.monthlyIncome;
+        System.out.println("Max monthly payment is: $" + maxMonthlyPayment);
+        return maxMonthlyPayment;
+    }
+    
+    //getLoanApproval method (userID, debt, loanAmount, termLength)
+    public memberNode getLoanApproval(int member_id, double debt, double loanAmount, double termLength) {
+        System.out.println("Running getLoanApproval method ");
+        memberNode memberKey = search(member_id);
+        double maxMonthlyPayment = getMaxMonthlyPayment(member_id, debt);
+        double termLengthMonths = termLength * 12;
+        if ((loanAmount / termLengthMonths) <= maxMonthlyPayment) {
+            System.out.println("Monthly payment would be " + (loanAmount/termLengthMonths) + ". \nLoan is approved.");
+            //System.out.println("APR is " + getAPR(member_id));
+            System.out.println("Loan of $" + loanAmount + " over " + termLength + 
+                    " years is approved. \nTotal interest paid would be $" + ((getAPR(member_id) * loanAmount)) + "\n");
+        } else if ((loanAmount / termLengthMonths) > maxMonthlyPayment) {
+            System.out.println("Loan is not approved at this term length.");
+            System.out.println("Max monthly payment is too high: $" + (loanAmount/termLengthMonths) + "\n" );
+        }
+        return memberKey;
+    }
+    
+    public static void main(String[] args) {
+        AutoLoanApp testbank = new AutoLoanApp();
+        testbank.newMember(100, 2000, 800);
+        testbank.newMember(101, 1200, 750);
+        testbank.newMember(102, 1400, 590);
+        testbank.newMember(103, 2500, 400);
+        
+        //InOrder traversal
+        testbank.listInOrder();
+        
+        //Example of printing information of 1 node only
+        testbank.printMemberProfile(100);
+        
+        //Example of loan that is approved
+        testbank.getLoanApproval(100, 400, 10000, 5);
+        
+        //Example of loan that is not approved
+        testbank.getLoanApproval(100, 400, 40000, 2);
+        
+    }
+    
+}
