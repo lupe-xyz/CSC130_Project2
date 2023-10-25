@@ -1,7 +1,11 @@
+package autoloanapp;
+import java.util.Scanner;
+
 public class AutoLoanApp {
 
     //root pointer
-    private memberNode rootID;
+    private static memberNode rootID;
+    private static int lastID;
     
     //memberNode method definition
     private class memberNode {
@@ -41,18 +45,16 @@ public class AutoLoanApp {
     }
     
     //method to search for a node by member ID
-    public memberNode search(int search_key) {
+    public static memberNode search(int search_key) {
         return searchRecursive(rootID, search_key);
     }
     
     //searchRecursive method definition
-    public memberNode searchRecursive(memberNode rootID_key, int search_key_val) {
+    public static memberNode searchRecursive(memberNode rootID_key, int search_key_val) {
         if(rootID_key == null || rootID_key.memberID == search_key_val) {
-            if(rootID_key == null) {
-                System.out.println("Member not found");
+            if(rootID_key == null) { 
                 return rootID_key;
             } else if(rootID_key.memberID == search_key_val) {
-                //System.out.println("Key found");
                 return rootID_key;
             }
         }
@@ -64,12 +66,12 @@ public class AutoLoanApp {
     }
     
     //method to print member information
-    public void printMemberProfile(int member_id) {
-        System.out.println("Running printMemberProfile method ");
-        memberNode profile = search(member_id);
-        System.out.println("User ID: " + profile.memberID);
-        System.out.println("Monthly Income: $" + profile.monthlyIncome);
-        System.out.println("Credit Score: " + profile.creditScore + "\n");
+    public void printMemberProfile(int member_id, memberNode account) {
+        System.out.println("Running printMemberProfile method.");
+        System.out.println("User ID: " + account.memberID);
+        System.out.println("Monthly Income: $" + account.monthlyIncome);
+        System.out.println("Credit Score: " + account.creditScore + "\n");
+        //}
     }
     
     //method to list members in order by ID number
@@ -77,7 +79,7 @@ public class AutoLoanApp {
         listInOrderRecursive(rootID);
     }
     
-    //listInOrderRecursive method definition
+    //listInOrderRecursive method definition (userID)
     public void listInOrderRecursive(memberNode rootID_key) {
         if(rootID_key == null) {
             return;
@@ -90,7 +92,7 @@ public class AutoLoanApp {
     }
     
    //calcDTI method (userID, debt)
-    public double calcDTI(int member_id, double debt) {
+    public static double calcDTI(int member_id, double debt) {
         memberNode memberKey = search(member_id);
         double dtiVal = (debt / memberKey.monthlyIncome);
         System.out.println("DTI is " + dtiVal*100 + "%");
@@ -98,7 +100,7 @@ public class AutoLoanApp {
     }
     
     //getAPR method (userID)
-    public double getAPR(int member_id) {
+    public static double getAPR(int member_id) {
         memberNode memberKey = search(member_id);
         double interestRate = 0;
         int cScore = memberKey.creditScore;
@@ -112,12 +114,12 @@ public class AutoLoanApp {
         } else if ((cScore >= 780) && (cScore <= 850)) {
             interestRate = 0.02; //percent
         }
-        System.out.println("APR percentage is: " + interestRate*100 + "%.");
+        System.out.println("APR percentage is " + interestRate*100 + "%.");
         return interestRate;
     }
     
     //getMaxMonthlyPayment method (userID, debt)
-    public double getMaxMonthlyPayment(int member_id, double debt) {
+    public static double getMaxMonthlyPayment(int member_id, double debt) {
         memberNode memberKey = search(member_id);
         double dtiVal = calcDTI(member_id, debt);
         double maxLoanPercentage = 0.43 - dtiVal;
@@ -126,43 +128,151 @@ public class AutoLoanApp {
         return maxMonthlyPayment;
     }
     
+    //runLoanInputPrompt method (userID)
+    public static void runLoanInputPrompt(int member_id) {
+        System.out.println("Initiating loan approval process.");
+        
+        Scanner loanPrompt = new Scanner(System.in);
+        
+        System.out.println("Enter monthly debt (rent, bills, other loans, etc) [Ex: 500 or 500.00] :");
+        double debtInput = loanPrompt.nextDouble();
+        
+        System.out.println("Enter loan amount [5000.00 to 75000.00] : ");
+        double loanInput = loanPrompt.nextDouble();
+            while ((loanInput < 5000) || (loanInput > 75000)) {
+                System.out.println("Loan amount is out of lending service range. Try again.");
+                loanInput = loanPrompt.nextDouble();
+            }
+        
+        System.out.println("Enter term length in years [1 to 7] : ");
+        double termInput = loanPrompt.nextDouble();
+        while ((termInput < 1) || (termInput > 7)) {
+                System.out.println("Term length is out of lending service range. Try again.");
+                termInput = loanPrompt.nextDouble();
+            }
+        
+        getLoanApproval(member_id, debtInput, loanInput, termInput);
+        
+    }
+    
     //getLoanApproval method (userID, debt, loanAmount, termLength)
-    public memberNode getLoanApproval(int member_id, double debt, double loanAmount, double termLength) {
-        System.out.println("Running getLoanApproval method ");
+    public static memberNode getLoanApproval(int member_id, double debt, double loanAmount, double termLength) {
+        
         memberNode memberKey = search(member_id);
-        double maxMonthlyPayment = getMaxMonthlyPayment(member_id, debt);
-        double termLengthMonths = termLength * 12;
-        if ((loanAmount / termLengthMonths) <= maxMonthlyPayment) {
-            System.out.println("Monthly payment would be " + (loanAmount/termLengthMonths) + ". \nLoan is approved.");
-            //System.out.println("APR is " + getAPR(member_id));
-            System.out.println("Loan of $" + loanAmount + " over " + termLength + 
-                    " years is approved. \nTotal interest paid would be $" + ((getAPR(member_id) * loanAmount)) + "\n");
-        } else if ((loanAmount / termLengthMonths) > maxMonthlyPayment) {
-            System.out.println("Loan is not approved at this term length.");
-            System.out.println("Max monthly payment is too high: $" + (loanAmount/termLengthMonths) + "\n" );
+        
+        if (((loanAmount >= 5000) && (loanAmount <= 75000)) && ((termLength >=1) && (termLength <= 7))) {
+            System.out.println("Running loan approval.");
+            
+            double maxMonthlyPayment = getMaxMonthlyPayment(member_id, debt);
+            double termLengthMonths = termLength * 12;
+            
+            if ((loanAmount / termLengthMonths) <= maxMonthlyPayment) {
+                System.out.println("Loan is approved. Monthly payment is $" + (loanAmount/termLengthMonths) + ".");
+                System.out.println("Total interest paid for auto loan of $" + loanAmount + " over " + termLength + 
+                    " years is $" + ((getAPR(member_id) * loanAmount)) + "\n");
+            } else if ((loanAmount / termLengthMonths) > maxMonthlyPayment) {
+                System.out.println("Loan is not approved at this term length.");
+                System.out.println("Max monthly payment is too high: $" + (loanAmount/termLengthMonths) + "\n" );
+            }
+        } else {
+            System.out.println("Loan amount or term length is outside lending service range.");
         }
         return memberKey;
     }
     
+    //runExitLoanLoop method (Scanner object, userID)
+    public static void runExitLoanLoop (Scanner prompt, int id_in) {
+        System.out.println("Enter 0 to exit. Enter 1 for loan approval.");
+        int choice = prompt.nextInt();
+            
+        //method to loop this
+            while ((choice != 0) && (choice != 1)) {
+                System.out.println("Invalid input. Try again.");
+                System.out.println("Enter 0 to exit. Enter 1 for loan approval.");
+                choice = prompt.nextInt();
+            }
+            
+            if (choice == 0) {
+                System.out.println("Exiting");
+                return;
+            } else if (choice == 1) {
+                runLoanInputPrompt(id_in);
+                runExitLoanLoop(prompt, id_in);
+                
+            }
+    }  
+    
+    //runNewMemberPrompt method (Scanner object, AutoLoanApp object)
+    public static void runNewMemberPrompt (Scanner prompt, AutoLoanApp bank) {
+        System.out.println("Creating new member account.");
+        lastID++;
+        
+        System.out.println("Enter gross monthly income [Ex: 500 or 500.00] : ");
+            double incomeInput = prompt.nextDouble();
+            System.out.println("Enter credit score [300 - 850] : ");
+            int cScoreInput = prompt.nextInt();
+            
+            while ((cScoreInput < 300) || (cScoreInput > 850)) {
+                System.out.println("Credit score input is out of range. Try again.");
+                System.out.println("Enter credit score [300 - 850] : ");
+                cScoreInput = prompt.nextInt();
+            }
+            bank.newMember((lastID), incomeInput, cScoreInput);
+            
+            System.out.println("Account created. Your new Member ID is " + (lastID) + ".");
+        
+    }
+    
+    //runCustomerPrompt method (Scanner object, AutoLoanApp object)
+    public static void runCustomerPromptLoop (Scanner prompt, AutoLoanApp bank) {
+        System.out.println("Enter Member ID [100-999], enter 0 to create new member account, or enter 2 to stop.");
+        int idInput = prompt.nextInt();
+        
+        if (idInput == 0) {
+            runNewMemberPrompt(prompt, bank);
+            runCustomerPromptLoop(prompt,bank);
+        } else if ((idInput >= 100) && (idInput <= 999)) {
+            memberNode profile = bank.search(idInput);
+            
+            if(profile != null) {
+                bank.printMemberProfile(idInput, profile); //here
+                runExitLoanLoop(prompt, idInput);
+                runCustomerPromptLoop(prompt, bank);
+            } else if (profile == null) {
+                System.out.println("Member not found. Try again.");
+                runCustomerPromptLoop(prompt, bank);
+            }
+            
+        } else if (idInput == 2) {
+            return;
+        } else {
+            System.out.println("Invalid input. Try again.");
+            runCustomerPromptLoop(prompt, bank);
+        }
+        
+    }
+    
+    //main
     public static void main(String[] args) {
+        
+        //initializing existing accounts
         AutoLoanApp testbank = new AutoLoanApp();
         testbank.newMember(100, 2000, 800);
         testbank.newMember(101, 1200, 750);
         testbank.newMember(102, 1400, 590);
         testbank.newMember(103, 2500, 400);
         
-        //InOrder traversal
+        //initializing integer variable to serve as pointer to the last ID number made
+        lastID = 103;
+
+        Scanner customerPrompt = new Scanner(System.in);
+        System.out.println("Welcome to BankName. \n");
+        
         testbank.listInOrder();
         
-        //Example of printing information of 1 node only
-        testbank.printMemberProfile(100);
-        
-        //Example of loan that is approved
-        testbank.getLoanApproval(100, 400, 10000, 5);
-        
-        //Example of loan that is not approved
-        testbank.getLoanApproval(100, 400, 40000, 2);
+        runCustomerPromptLoop(customerPrompt, testbank);
+       
+        System.out.println("\nThanks for visiting BankName.");
         
     }
-    
 }
